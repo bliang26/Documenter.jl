@@ -289,6 +289,8 @@ makedocs(
 hide(root::Pair, children) = (true, root.first, root.second, map(hide, children))
 hide(root::AbstractString, children) = (true, nothing, root, map(hide, children))
 
+include("DeployConfig.jl")
+
 """
     deploydocs(
         root   = "<current-directory>",
@@ -438,42 +440,13 @@ function deploydocs(;
         devurl = "dev",
         versions = ["stable" => "v^", "v#.#", devurl => devurl],
         forcepush::Bool = false,
+        deploy_config = nothing,
     )
-    # Get environment variables.
-    documenter_key      = get(ENV, "DOCUMENTER_KEY",       "")
-    travis_branch       = get(ENV, "TRAVIS_BRANCH",        "")
-    travis_pull_request = get(ENV, "TRAVIS_PULL_REQUEST",  "")
-    travis_repo_slug    = get(ENV, "TRAVIS_REPO_SLUG",     "")
-    travis_tag          = get(ENV, "TRAVIS_TAG",           "")
-    travis_event_type   = get(ENV, "TRAVIS_EVENT_TYPE",    "")
 
-    # Check criteria for deployment
-    ## The deploydocs' repo should match TRAVIS_REPO_SLUG
-    repo_ok = occursin(travis_repo_slug, repo)
-    ## Do not deploy for PRs
-    pr_ok = travis_pull_request == "false"
-    ## If a tag exist it should be a valid VersionNumber
-    tag_ok = isempty(travis_tag) || occursin(Base.VERSION_REGEX, travis_tag)
-    ## If no tag exists deploydocs' devbranch should match TRAVIS_BRANCH
-    branch_ok = !isempty(travis_tag) || travis_branch == devbranch
-    ## DOCUMENTER_KEY should exist
-    key_ok = !isempty(documenter_key)
-    ## Cron jobs should not deploy
-    type_ok = travis_event_type != "cron"
-    should_deploy = repo_ok && pr_ok && tag_ok && branch_ok && key_ok && type_ok
+    # Default to Travis (TODO: Autodetect)
+    deploy_config = something(deploy_config, Travis(repo=repo, devbranch=devbranch))
 
-    marker(x) = x ? "✔" : "✘"
-    @info """Deployment criteria:
-    - $(marker(repo_ok)) ENV["TRAVIS_REPO_SLUG"]="$(travis_repo_slug)" occurs in repo="$(repo)"
-    - $(marker(pr_ok)) ENV["TRAVIS_PULL_REQUEST"]="$(travis_pull_request)" is "false"
-    - $(marker(tag_ok)) ENV["TRAVIS_TAG"]="$(travis_tag)" is (i) empty or (ii) a valid VersionNumber
-    - $(marker(branch_ok)) ENV["TRAVIS_BRANCH"]="$(travis_branch)" matches devbranch="$(devbranch)" (if tag is empty)
-    - $(marker(key_ok)) ENV["DOCUMENTER_KEY"] exists
-    - $(marker(type_ok)) ENV["TRAVIS_EVENT_TYPE"]="$(travis_event_type)" is not "cron"
-    Deploying: $(marker(should_deploy))
-    """
-
-    if should_deploy
+    if should_deploy(deploy_config)
         # Add local bin path if needed.
         Deps.updatepath!()
         # Install dependencies when applicable.
