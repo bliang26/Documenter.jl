@@ -48,3 +48,45 @@ function should_deploy(cfg::Travis)
     """
     return all_ok
 end
+
+struct GitHubActions <: DeployConfig
+    documenter_key::String
+    github_repository::String
+    repo::String
+    devbranch::String
+end
+function GitHubActions(; repo, devbranch)
+    documenter_key      = get(ENV, "DOCUMENTER_KEY",    "")
+    github_repository   = get(ENV, "GITHUB_REPOSITORY", "")
+    github_event_name   = get(ENV, "GITHUB_EVENT_NAME", "")
+    github_ref          = get(ENV, "GITHUB_REF",        "")
+    return GitHubActions(documenter_key, github_repository, repo, devbranch)
+end
+
+# Check criteria for deployment
+function should_deploy(cfg::GitHubActions)
+    # ## The deploydocs' repo should match GITHUB_REPOSITORY
+    # repo_ok = occursin(cfg.github_repository, cfg.repo)
+    # ## Do not deploy for PRs
+    # pr_ok = cfg.github_event_name == "false"
+    # ## If a tag exist it should be a valid VersionNumber
+    # tag_ok = isempty(cfg.travis_tag) || occursin(Base.VERSION_REGEX, cfg.travis_tag)
+    # ## If no tag exists deploydocs' devbranch should match TRAVIS_BRANCH
+    # branch_ok = !isempty(cfg.travis_tag) || cfg.travis_branch == cfg.devbranch
+    # ## DOCUMENTER_KEY should exist
+    # key_ok = !isempty(cfg.documenter_key)
+    # ## Cron jobs should not deploy
+    # type_ok = cfg.travis_event_type != "cron"
+    # all_ok = repo_ok && pr_ok && tag_ok && branch_ok && key_ok && type_ok
+    # marker(x) = x ? "✔" : "✘"
+    # @info """Deployment criteria for deploying with GitHub Actions:
+    # - $(marker(repo_ok)) ENV["GITHUB_REPOSITORY"]="$(cfg.github_repository)" occurs in repo="$(cfg.repo)"
+    # - $(marker(pr_ok)) ENV["TRAVIS_PULL_REQUEST"]="$(cfg.travis_pull_request)" is "false"
+    # - $(marker(tag_ok)) ENV["TRAVIS_TAG"]="$(cfg.travis_tag)" is (i) empty or (ii) a valid VersionNumber
+    # - $(marker(branch_ok)) ENV["TRAVIS_BRANCH"]="$(cfg.travis_branch)" matches devbranch="$(cfg.devbranch)" (if tag is empty)
+    # - $(marker(key_ok)) ENV["DOCUMENTER_KEY"] exists
+    # - $(marker(type_ok)) ENV["TRAVIS_EVENT_TYPE"]="$(cfg.travis_event_type)" is not "cron"
+    # Deploying: $(marker(all_ok))
+    # """
+    return false
+end

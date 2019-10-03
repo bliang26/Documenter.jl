@@ -444,7 +444,9 @@ function deploydocs(;
     )
 
     # Default to Travis (TODO: Autodetect)
-    deploy_config = something(deploy_config, Travis(repo=repo, devbranch=devbranch))
+    # deploy_config = something(deploy_config, Travis(repo=repo, devbranch=devbranch))
+    deploy_config = something(deploy_config, GitHubActions(repo=repo, devbranch=devbranch))
+    @show deploy_config
 
     if should_deploy(deploy_config)
         # Add local bin path if needed.
