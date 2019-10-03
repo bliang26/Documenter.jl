@@ -52,6 +52,8 @@ end
 struct GitHubActions <: DeployConfig
     documenter_key::String
     github_repository::String
+    github_event_name::String
+    github_ref::String
     repo::String
     devbranch::String
 end
@@ -60,7 +62,7 @@ function GitHubActions(; repo, devbranch)
     github_repository   = get(ENV, "GITHUB_REPOSITORY", "")
     github_event_name   = get(ENV, "GITHUB_EVENT_NAME", "")
     github_ref          = get(ENV, "GITHUB_REF",        "")
-    return GitHubActions(documenter_key, github_repository, repo, devbranch)
+    return GitHubActions(documenter_key, github_repository, github_event_name, github_ref, repo, devbranch)
 end
 
 # Check criteria for deployment
