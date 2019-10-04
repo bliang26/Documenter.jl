@@ -72,16 +72,16 @@ function should_deploy(cfg::GitHubActions)
     ## Do not deploy for PRs
     pr_ok = cfg.github_event_name == "push"
     ## If a tag exist it should be a valid VersionNumber
-    mt = match(r"^refs/tags/(.*)$", cfg.github_ref)
-    tag_ok = mt === nothing || occursin(Base.VERSION_REGEX, String(mt.captures[1]))
+    m = match(r"^refs/tags/(.*)$", cfg.github_ref)
+    tag_ok = m === nothing ? false : occursin(Base.VERSION_REGEX, String(m.captures[1]))
     ## If no tag exists deploydocs' devbranch should match the current branch
-    mb = match(r"^refs/heads/(.*)$", cfg.github_ref)
-    branch_ok = mt !== nothing || String(mb.captures[1]) == cfg.devbranch
+    m = match(r"^refs/heads/(.*)$", cfg.github_ref)
+    branch_ok = m === nothing ? false : String(m.captures[1]) == cfg.devbranch
     ## DOCUMENTER_KEY should exist
     key_ok = !isempty(cfg.documenter_key)
     # ## Cron jobs should not deploy
     # type_ok = cfg.travis_event_type != "cron"
-    all_ok = repo_ok && pr_ok && tag_ok && branch_ok && key_ok # && type_ok
+    all_ok = repo_ok && pr_ok && (tag_ok || branch_ok) && key_ok # && type_ok
     marker(x) = x ? "✔" : "✘"
     @info """Deployment criteria for deploying with GitHub Actions:
     - $(marker(repo_ok)) ENV["GITHUB_REPOSITORY"]="$(cfg.github_repository)" occurs in repo="$(cfg.repo)"
