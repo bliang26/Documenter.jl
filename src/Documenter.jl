@@ -446,11 +446,6 @@ function deploydocs(;
     # Default to Travis (TODO: Autodetect)
     # deploy_config = something(deploy_config, Travis())
     deploy_config = something(deploy_config, GitHubActions())
-    @show deploy_config
-    skey = Base.SecretBuffer(ENV["DOCUMENTER_KEY"])
-    DOCUMENTER_KEY = String(base64decode(read(seekstart(skey))))
-    Base.shred!(skey)
-    @show DOCUMENTER_KEY
 
     if should_deploy(deploy_config; repo=repo, devbranch=devbranch)
         # Add local bin path if needed.
