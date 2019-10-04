@@ -444,11 +444,11 @@ function deploydocs(;
     )
 
     # Default to Travis (TODO: Autodetect)
-    # deploy_config = something(deploy_config, Travis(repo=repo, devbranch=devbranch))
-    deploy_config = something(deploy_config, GitHubActions(repo=repo, devbranch=devbranch))
+    # deploy_config = something(deploy_config, Travis())
+    deploy_config = something(deploy_config, GitHubActions())
     @show deploy_config
 
-    if should_deploy(deploy_config)
+    if should_deploy(deploy_config; repo=repo, devbranch=devbranch)
         # Add local bin path if needed.
         Deps.updatepath!()
         # Install dependencies when applicable.
@@ -484,7 +484,7 @@ function deploydocs(;
                 git_push(
                     root, temp, repo;
                     branch=branch, dirname=dirname, target=target,
-                    tag=travis_tag, key=documenter_key, sha=sha,
+                    tag=travis_tag, key=documenter_key(deploy_config), sha=sha,
                     devurl = devurl, versions = versions, forcepush = forcepush,
                 )
             end
@@ -504,7 +504,7 @@ and when building docs for a tag they are deployed to a `vX.Y.Z` directory.
 """
 function git_push(
         root, temp, repo;
-        branch="gh-pages", dirname="", target="site", tag="", key="", sha="", devurl="dev",
+        branch="gh-pages", dirname="", target="site", tag="", key=Base.SecretBuffer(""), sha="", devurl="dev",
         versions, forcepush=false,
     )
     dirname = isempty(dirname) ? temp : joinpath(temp, dirname)
@@ -520,7 +520,7 @@ function git_push(
 
     keyfile = abspath(joinpath(root, ".documenter"))
     try
-        write(keyfile, String(base64decode(key)))
+        write(keyfile, base64decode(read(seekstart(key))))
     catch e
         @error """
         Documenter failed to decode the DOCUMENTER_KEY environment variable.
@@ -528,6 +528,9 @@ function git_push(
         of the SSH private key. You may need to re-generate the keys with DocumenterTools.
         """
         rethrow(e)
+    finally
+        Base.shred!(key)
+        rm(keyfile; force=true)
     end
     chmod(keyfile, 0o600)
 
