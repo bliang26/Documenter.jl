@@ -1,8 +1,12 @@
 abstract type DeployConfig end
 
 function documenter_key(::DeployConfig)
-    return Base.SecretBuffer(ENV["DOCUMENTER_KEY"])
+    return ENV["DOCUMENTER_KEY"]
 end
+
+#############
+# Travis CI #
+#############
 
 struct Travis <: DeployConfig
     travis_branch::String
@@ -49,6 +53,15 @@ function should_deploy(cfg::Travis; repo, devbranch, kwargs...)
     return all_ok
 end
 
+# Obtain git tag for the build
+function git_tag(cfg::Travis)
+    isempty(cfg.travis_tag) ? nothing : cfg.travis_tag
+end
+
+##################
+# GitHub Actions #
+##################
+
 struct GitHubActions <: DeployConfig
     github_repository::String
     github_event_name::String
@@ -87,4 +100,10 @@ function should_deploy(cfg::GitHubActions; repo, devbranch, kwargs...)
     Deploying: $(marker(all_ok))
     """
     return all_ok
+end
+
+# Obtain git tag for the build
+function git_tag(cfg::GitHubActions)
+    m = match(r"^refs/tags/(.*)$", cfg.github_ref)
+    return m === nothing ? nothing : String(m.captures[1])
 end

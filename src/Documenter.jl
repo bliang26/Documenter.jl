@@ -483,8 +483,8 @@ function deploydocs(;
                 git_push(
                     root, temp, repo;
                     branch=branch, dirname=dirname, target=target,
-                    tag=travis_tag, key=documenter_key(deploy_config), sha=sha,
-                    devurl = devurl, versions = versions, forcepush = forcepush,
+                    sha=sha, deploy_config=deploy_config,
+                    devurl=devurl, versions=versions, forcepush=forcepush,
                 )
             end
         end
@@ -503,8 +503,8 @@ and when building docs for a tag they are deployed to a `vX.Y.Z` directory.
 """
 function git_push(
         root, temp, repo;
-        branch="gh-pages", dirname="", target="site", tag="", key=Base.SecretBuffer(""), sha="", devurl="dev",
-        versions, forcepush=false,
+        branch="gh-pages", dirname="", target="site", sha="", devurl="dev",
+        versions, forcepush=false, deploy_config,
     )
     dirname = isempty(dirname) ? temp : joinpath(temp, dirname)
     isdir(dirname) || mkpath(dirname)
@@ -519,7 +519,7 @@ function git_push(
 
     keyfile = abspath(joinpath(root, ".documenter"))
     try
-        write(keyfile, base64decode(read(seekstart(key))))
+        write(keyfile, base64decode(documenter_key(deploy_config)))
     catch e
         @error """
         Documenter failed to decode the DOCUMENTER_KEY environment variable.
@@ -528,7 +528,6 @@ function git_push(
         """
         rethrow(e)
     finally
-        Base.shred!(key)
         rm(keyfile; force=true)
     end
     chmod(keyfile, 0o600)
@@ -574,7 +573,8 @@ function git_push(
                 end
 
                 # Copy docs to `devurl`, or `stable`, `<release>`, and `<version>` directories.
-                if isempty(tag)
+                tag = git_tag(deploy_config)
+                if tag === nothing
                     devurl_dir = joinpath(dirname, devurl)
                     gitrm_copy(target_dir, devurl_dir)
                     Writers.HTMLWriter.generate_siteinfo_file(devurl_dir, devurl)
