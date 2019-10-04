@@ -1,7 +1,7 @@
 abstract type DeployConfig end
 
 function documenter_key(::DeployConfig)
-    return Base.SecreteBuffer(ENV["DOCUMENTER_KEY"])
+    return Base.SecretBuffer(ENV["DOCUMENTER_KEY"])
 end
 
 struct Travis <: DeployConfig
