@@ -82,9 +82,9 @@ function should_deploy(cfg::GitHubActions; repo, devbranch, kwargs...)
     @info """Deployment criteria for deploying with GitHub Actions:
     - $(marker(repo_ok)) ENV["GITHUB_REPOSITORY"]="$(cfg.github_repository)" occurs in repo="$(repo)"
     - $(marker(pr_ok)) ENV["GITHUB_EVENT_NAME"]="$(cfg.github_event_name)" is "push"
-    - $(marker(tag_ok)) ENV["GITHUB_REF"]="$(cfg.github_ref)" corresponds to a tag or matches devbranch="$(devbranch)"
+    - $(marker(tag_ok || branch_ok)) ENV["GITHUB_REF"]="$(cfg.github_ref)" corresponds to a tag or matches devbranch="$(devbranch)"
     - $(marker(key_ok)) ENV["DOCUMENTER_KEY"] exists
     Deploying: $(marker(all_ok))
     """
-    return false
+    return all_ok
 end
