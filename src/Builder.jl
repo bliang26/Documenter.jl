@@ -108,11 +108,17 @@ function Selectors.runner(::Type{SetupBuildDirectory}, doc::Documents.Document)
     # `mdpages`, to be used later.
     mdpages = String[]
     for (root, dirs, files) in walkdir(source)
+        if basename(root) != "." && startswith(basename(root), ".")
+            continue
+        end
         for dir in dirs
             d = normpath(joinpath(build, relpath(root, source), dir))
             isdir(d) || mkdir(d)
         end
         for file in files
+            if startswith(file, ".")
+                continue
+            end
             src = normpath(joinpath(root, file))
             dst = normpath(joinpath(build, relpath(root, source), file))
 
